@@ -1,1 +1,5 @@
-# -DM8100_MatrixMutiplication
+# Matrix Mutiplication
+
+## Serial
+    - Naive Matrix multiplication
+
