@@ -1,5 +1,5 @@
 # Matrix Mutiplication
 
 ## Serial
-    - Naive Matrix multiplication
+    -Naive Matrix multiplication
 
