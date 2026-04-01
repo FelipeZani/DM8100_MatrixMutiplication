@@ -2,37 +2,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <omp.h>
-
-#define N 1000
-#define M 3
-
-void printMatrix(int ** mat){
-
-	for(int i = 0; i < N; i++) {
-		for(int j = 0; j < N; j++) {
-		    printf("%d ", mat[i][j]);
-		}
-		printf("\n");
-	}
-
-}
-void initMatrix(int ** matrixA,int ** matrixB, int ** matrixC, int a , int b){
-	
-	for(int i = 0; i <N; i++){
-			matrixA[i] = malloc(sizeof(int)*N);
-			matrixB[i] = malloc(sizeof(int)*N);
-			matrixC[i] = malloc(sizeof(int)*N);
-
-	}
-	for(int i = 0; i <N; i++){
-		for(int j = 0; j <N; j++){
-			matrixA[i][j] =  rand()%((b+1)-a) + a;
-			matrixB[i][j] = rand()%((b+1)-a) + a;
-		}
-	}	
-	
-}
-
+#include "include/matrixTools.h"
 
 //Reads memory in a straight line
 void matrixMuxIKJ(int ** matrixA, int ** matrixB, int ** matrixC){
