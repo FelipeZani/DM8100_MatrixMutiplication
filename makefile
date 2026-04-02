@@ -3,7 +3,7 @@ serial:
 omp:
 	gcc -fopenmp -o openMPMux openMPMux.c src/matrixTools.c
 mpi:
-	mpicc -o mpiMux mpiMux.c
+	mpicc -o mpiMux mpiMux.c src/matrixTools.c
 
 runall : serial omp mpi
 	./serialMux

@@ -6,12 +6,13 @@
 
 
 
-#define N 1000
+#define N 100
 #define M 3
 void printMatrix(int ** mat);
 
 extern const time_t myseed;
 void initMatrix(double ** matrixA, double ** matrixB, double ** matrixC, int a , int b);
+void initLinearMatrix(double * a, double * c, double * b, int inta , int intb);
 
 
 

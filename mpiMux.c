@@ -1,66 +1,65 @@
-#include <mpi.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <mpi.h>
 #include "include/matrixTools.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char *argv[])
+{
+    int i, j, k, rank, size;
+    double *a = NULL, *b = NULL, *c = NULL;
+    double *aa, *cc;
+    double sum = 0;
 
-	srand(time(NULL));
-	
-	int size, rank, i, j, k;
-	
-	int*  arrA,* arrB,* arrC;
-	int *local_a, *local_c;
-	int rows_per_proc;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	MPI_Init(&argc, &argv);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
+    int elements_per_proc = (N * N) / size;
+    int rows_per_proc = N / size;
 
-	rows_per_proc = N / size;
+    aa = malloc(elements_per_proc * sizeof(double));
+    cc = malloc(elements_per_proc * sizeof(double));
+    b = malloc(N * N * sizeof(double));
 
-	local_a = malloc(rows_per_proc * N * sizeof(int));
-	local_c = malloc(rows_per_proc * N * sizeof(int));
-	arrB = malloc(N * N * sizeof(int));
+    if (rank == 0) {
+	       a = malloc(N * N * sizeof(double));
+	       c = malloc(N * N * sizeof(double));
 
-	if (rank == 0) {
-		arrA = malloc(N * N * sizeof(int));
-		arrC = malloc(N * N * sizeof(int));
-		
-		// Initialize Matrices
-        	for (i = 0; i < N * N; i++) {
-			arrA[i] = 2*i+N; 
-			arrB[i] = 3*i+N;
-        	}
-	}
-	// 1. Distribute rows of A to all processes
-	MPI_Scatter(arrA, rows_per_proc * N, MPI_INT, local_a, rows_per_proc * N, MPI_INT, 0, MPI_COMM_WORLD);
-
-	// 2. Broadcast the entire matrix B to all processes
-	MPI_Bcast(arrB, N * N, MPI_INT, 0, MPI_COMM_WORLD);
-	// 3. Local Computation
-	for (i = 0; i < rows_per_proc; i++) {
-		for (j = 0; j < N; j++) {
-			local_c[i * N + j] = 0;
-			for (k = 0; k < N; k++) {
-				local_c[i * N + j] += local_a[i * N + k] * arrB[k * N + j];
-			}
+	       for(i=0; i<N; i++) {
+		for(int j = 0;j<N;j++ ){
+		    a[i*N+j] = 2*i+N; 
+		    b[i*N+j] = 3*i+N;
 		}
 	}
+	// initLinearMatrix(a, c, b, 2, 3);
+    }
 
-	// 4. Gather the calculated rows back into arrC
-	MPI_Gather(local_c, rows_per_proc * N, MPI_INT, arrC, rows_per_proc * N, MPI_INT, 0, MPI_COMM_WORLD);
+    //  Scatter the rows of A
+    MPI_Scatter(a, elements_per_proc, MPI_DOUBLE, aa, elements_per_proc, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-	if (rank == 0) {
-		printf("Result Matrix C (first element): %d\n", arrC[0]);
-		free(arrA);
-		free(arrC);
-	}
+    // Broadcast the entirety of B
+    MPI_Bcast(b, N * N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-	free(local_a);
-	free(local_c);
-	free(arrB);
+    //  Local Computation
+    for (i = 0; i < rows_per_proc; i++) { // For each row assigned to this proc
+        for (j = 0; j < N; j++) {         // For each column of B
+            sum = 0;
+            for (k = 0; k < N; k++) {     // Dot product
+                sum += aa[i * N + k] * b[k * N + j];
+            }
+            cc[i * N + j] = sum;
+        }
+    }
 
-	MPI_Finalize();
-	return 0;
+    // Gather the results
+    MPI_Gather(cc, elements_per_proc, MPI_DOUBLE, c, elements_per_proc, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        printf("Result C[0][0]: %f\n", c[0]);
+        free(a); free(c);
+    }
+
+    free(aa); free(cc); free(b);
+    MPI_Finalize();
+    return 0;
 }

@@ -11,6 +11,18 @@ void printMatrix(int ** mat){
 	}
 
 }
+void initLinearMatrix(double * a, double * c, double * b, int inta , int intb){
+        
+        for(int i=0; i<N; i++) {
+		for(int j = 0;j<N;j++ ){
+		    a[i*N+j] = 2.0*i+N; 
+		    b[i*N+j] = 3.0*i+N;
+			a[i*N+j] = (double) (rand()%((intb+1)-inta) + inta);
+			b[i*N+j] = (double) (rand()%((intb+1)-inta) + inta);
+		}
+	}
+
+}
 void initMatrix(double ** matrixA,double ** matrixB, double ** matrixC, int a , int b){
 	
 	for(int i = 0; i <N; i++){
