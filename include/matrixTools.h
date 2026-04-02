@@ -8,12 +8,10 @@
 
 #define N 1000
 #define M 3
-
-
 void printMatrix(int ** mat);
 
-void initMatrix(int ** matrixA,int ** matrixB, int ** matrixC, int a , int b);
-
+extern const time_t myseed;
+void initMatrix(double ** matrixA, double ** matrixB, double ** matrixC, int a , int b);
 
 
 

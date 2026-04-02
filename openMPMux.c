@@ -5,7 +5,7 @@
 #include "include/matrixTools.h"
 
 //Reads memory in a straight line
-void matrixMuxIKJ(int ** matrixA, int ** matrixB, int ** matrixC){
+void matrixMuxIKJ(double ** matrixA, double ** matrixB, double ** matrixC){
 
 
 	#pragma omp parallel 
@@ -17,6 +17,7 @@ void matrixMuxIKJ(int ** matrixA, int ** matrixB, int ** matrixC){
 					
 				for(int j = 0; j < N; j++) {
 					matrixC[i][j] += matrixA[i][k] * matrixB[k][j];
+
 				}
 			}
 		}
@@ -24,7 +25,7 @@ void matrixMuxIKJ(int ** matrixA, int ** matrixB, int ** matrixC){
 	}
 
 }
-void matrixMuxIJK(int ** matrixA, int ** matrixB, int ** matrixC){
+void matrixMuxIJK(double ** matrixA, double ** matrixB, double ** matrixC){
 	#pragma omp parallel 
 	{
 		#pragma omp for schedule(dynamic,M)  collapse(2) 
@@ -41,9 +42,9 @@ void matrixMuxIJK(int ** matrixA, int ** matrixB, int ** matrixC){
 
 int main(){
 	
-	int ** matrixA = malloc(sizeof(int*)*N);
-	int ** matrixB = malloc(sizeof(int*)*N);
-	int ** matrixC = malloc(sizeof(int*)*N);
+	double ** matrixA = malloc(sizeof(double*)*N);
+	double ** matrixB = malloc(sizeof(double*)*N);
+	double ** matrixC = malloc(sizeof(double*)*N);
 	
      	srand(time(NULL));
 	
@@ -58,10 +59,9 @@ int main(){
 	// matrixMuxIKJ(matrixA,matrixB,matrixC); //faster than previous implementation
 	
 	endT = omp_get_wtime();
-
-    // Print result
 			
 	printf("Exec Time: %f", (endT-startT));
+	printf("First result is %f", matrixC[0][0]);
 	for(int i = 0; i <N; i++){
 		free(matrixA[i]) ;
 		free(matrixB[i]) ;

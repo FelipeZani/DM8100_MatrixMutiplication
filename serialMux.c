@@ -3,9 +3,8 @@
 #include <stdio.h>
 #include <omp.h>
 #include "include/matrixTools.h"
-#define N 1000
 
-void matrixMux(int ** matrixA, int ** matrixB, int ** matrixC){
+void matrixMux(double ** matrixA, double ** matrixB, double ** matrixC){
 	for(int i = 0; i < N; i++) {
         	for(int j = 0; j < N; j++) {
 			for(int k = 0; k < N; k++) {
@@ -17,9 +16,9 @@ void matrixMux(int ** matrixA, int ** matrixB, int ** matrixC){
 
 int main(){
 	
-	int ** matrixA = malloc(sizeof(int*)*N);
-	int ** matrixB = malloc(sizeof(int*)*N);
-	int ** matrixC = malloc(sizeof(int*)*N);
+	double ** matrixA = malloc(sizeof(double*)*N);
+	double ** matrixB = malloc(sizeof(double*)*N);
+	double ** matrixC = malloc(sizeof(double*)*N);
 	
      	srand(time(NULL));
 	
@@ -31,7 +30,8 @@ int main(){
 	matrixMux(matrixA,matrixB,matrixC);
 	endT = omp_get_wtime();
 
-	printf("Exec Time: %f", (endT-startT));
+	printf("Exec Time: %f\n", (endT-startT));
+	printf("fisrt item of C %f",matrixC[0][0]);
 	for(int i = 0; i <N; i++){
 		free(matrixA[i]) ;
 		free(matrixB[i]) ;
