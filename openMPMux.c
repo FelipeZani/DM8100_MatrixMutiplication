@@ -4,76 +4,60 @@
 #include <omp.h>
 #include "include/matrixTools.h"
 
-//Reads memory in a straight line
-void matrixMuxIKJ(double ** matrixA, double ** matrixB, double ** matrixC){
-
-
-	#pragma omp parallel 
-	{
-		#pragma omp for schedule(dynamic,M)  collapse(2) 
-		for(int i = 0; i < N; i++) {
-			
+void matrixMux_Serial(double * matrixA, double * matrixB, double * matrixC, int N){
+	for(int i = 0; i < N; i++) {
+        for(int j = 0; j < N; j++) {
 			for(int k = 0; k < N; k++) {
-					
-				for(int j = 0; j < N; j++) {
-					matrixC[i][j] += matrixA[i][k] * matrixB[k][j];
-
-				}
+				matrixC[i * N + j] += matrixA[i * N + k] * matrixB[k * N + j];
 			}
 		}
-
-	}
-
-}
-void matrixMuxIJK(double ** matrixA, double ** matrixB, double ** matrixC){
-	#pragma omp parallel 
-	{
-		#pragma omp for schedule(dynamic,M)  collapse(2) 
-		for(int i = 0; i < N; i++) {
-			for(int j = 0; j < N; j++) {
-				for(int k = 0; k < N; k++) {
-					matrixC[i][j] += matrixA[i][k] * matrixB[k][j];
-				}
-			}
-		}
-
 	}
 }
 
-int main(){
-	
-	double ** matrixA = malloc(sizeof(double*)*N);
-	double ** matrixB = malloc(sizeof(double*)*N);
-	double ** matrixC = malloc(sizeof(double*)*N);
-	
-     	srand(time(NULL));
-	
+void matrixMuxIKJ_OMP(double * matrixA, double * matrixB, double * matrixC, int N){
+	#pragma omp parallel for schedule(dynamic)
+    for(int i = 0; i < N; i++) {
+        for(int k = 0; k < N; k++) {
+            for(int j = 0; j < N; j++) {
+                matrixC[i * N + j] += matrixA[i * N + k] * matrixB[k * N + j];
+            }
+        }
+    }
+}
 
-	initMatrix(matrixA, matrixB,matrixC,2,3);
-	initMatrix(matrixA, matrixB,matrixC,2,3);
+int main(int argc, char *argv[]){
+    if (argc != 2) {
+        return 1;
+    }
+
+    int N = atoi(argv[1]);
+
+	double * matrixA = malloc(N * N * sizeof(double));
+	double * matrixB = malloc(N * N * sizeof(double));
+	double * matrixC_OMP = malloc(N * N * sizeof(double));
+    double * matrixC_Serial = malloc(N * N * sizeof(double));
+
+    srand(time(NULL));
+
+	initMatrix(matrixA, matrixB, matrixC_OMP, N, 2, 3);
+    initMatrix(matrixA, matrixB, matrixC_Serial, N, 2, 3);
+
+
 	double startT = omp_get_wtime();
-	double endT;
+	matrixMuxIKJ_OMP(matrixA, matrixB, matrixC_OMP, N);
+	double endT = omp_get_wtime();
 
+    matrixMux_Serial(matrixA, matrixB, matrixC_Serial, N);
 
-	matrixMuxIJK(matrixA,matrixB,matrixC);
-	// matrixMuxIKJ(matrixA,matrixB,matrixC); //faster than previous implementation
-	
-	endT = omp_get_wtime();
-			
-	printf("Exec Time: %f", (endT-startT));
-	printf("First result is %f", matrixC[0][0]);
-	for(int i = 0; i <N; i++){
-		free(matrixA[i]) ;
-		free(matrixB[i]) ;
-		free(matrixC[i]) ;
+    double diff = check_norm(matrixC_Serial, matrixC_OMP, N);
 
-	}
-	free(matrixA);
-	free(matrixB);
-	free(matrixC);
+	printf("OpenMP (IKJ) | Size: %dx%d | Exec Time: %f s\n", N, N, (endT-startT));
+    if (diff == 0.0) {
+        printf("Pass (Différence = %f)\n", diff);
+    } else {
+        printf("Fail (Différence = %f)\n", diff);
+    }
 
+	free(matrixA); free(matrixB); free(matrixC_OMP); free(matrixC_Serial);
 	return 0;
 }
-
-//Interisting reading which may be useful:
-// https://stackoverflow.com/questions/28482833/understanding-the-collapse-clause-in-openmp#28483812 - Trying to fuse the three loops instead of using a nested one 

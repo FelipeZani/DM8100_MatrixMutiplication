@@ -2,19 +2,13 @@
 #define MATRIXTOOLS_H
 #include <stdio.h>
 #include <stdlib.h>
-
-
-
-
-#define N 100
-#define M 3
-void printMatrix(int ** mat);
+#include <time.h>
 
 extern const time_t myseed;
-void initMatrix(double ** matrixA, double ** matrixB, double ** matrixC, int a , int b);
-void initLinearMatrix(double * a, double * c, double * b, int inta , int intb);
 
-
+void printMatrix(double * mat, int N);
+void initMatrix(double * matrixA, double * matrixB, double * matrixC, int N, int a , int b);
+void initLinearMatrix(double * a, double * c, double * b, int N, int inta , int intb);
+double check_norm(double * C_serial, double * C_parallel, int N);
 
 #endif
-
