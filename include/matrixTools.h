@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-const int N = 500;
+// const int N = 500;
 extern const time_t myseed;
 
 void printMatrix(double * mat, int N);

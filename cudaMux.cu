@@ -5,6 +5,7 @@
 #include "include/matrixTools.h"
 
 #define TILE_SIZE 16
+#define N 1024
 
 /* Function that could catch gpu failures early 
    **InProgress** 
