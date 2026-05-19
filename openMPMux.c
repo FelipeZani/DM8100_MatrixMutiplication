@@ -53,9 +53,9 @@ int main(int argc, char *argv[]){
 
 	printf("OpenMP (IKJ) | Size: %dx%d | Exec Time: %f s\n", N, N, (endT-startT));
     if (diff == 0.0) {
-        printf("Pass (Différence = %f)\n", diff);
+        printf("Pass (Difference = %f)\n", diff);
     } else {
-        printf("Fail (Différence = %f)\n", diff);
+        printf("Fail (Difference = %f)\n", diff);
     }
 
 	free(matrixA); free(matrixB); free(matrixC_OMP); free(matrixC_Serial);

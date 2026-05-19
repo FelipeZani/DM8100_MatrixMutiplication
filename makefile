@@ -5,9 +5,13 @@ omp:
 mpi:
 	mpicc -o mpiMux mpiMux.c src/matrixTools.c
 
-runall : serial omp mpi
+cuda:
+	nvcc -o cudaMux cudaMux.cu src/matrixTools.c
+
+runall : serial omp mpi cuda
 	./serialMux
 	./openMPMux
 	mpirun -n 1 ./mpiMux
+	./cudaMux
 clean:
 	rm ${PROG}

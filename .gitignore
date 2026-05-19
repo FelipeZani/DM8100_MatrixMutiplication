@@ -1,0 +1,20 @@
+# Compiled Source #
+###################
+*.exe
+*.o
+*.so
+*.exp
+*.lib
+
+# Packages #
+############
+*.rar
+*.tar
+*.zip
+*.gz
+
+# Logs and databases #
+######################
+*.log
+*.db
+*.txt
