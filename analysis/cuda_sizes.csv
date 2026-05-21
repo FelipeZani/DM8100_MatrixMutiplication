@@ -1,0 +1,5 @@
+implementation,size,avg_time,stddev
+CUDA,1024,0.000581,0.0
+CUDA,2048,0.0036,0.0
+CUDA,4096,0.0266,0.0
+CUDA,6144,0.08921,0.0

@@ -5,7 +5,8 @@
 #include "include/matrixTools.h"
 
 #define TILE_SIZE 16
-#define N 1024
+// Run with: ./cudaMux 
+
 
 /* Function that could catch gpu failures early 
    **InProgress** 
@@ -56,38 +57,39 @@ __global__ void matrixMulTiled(const double *A, const double *B, double *C, int 
     }
 }
 
-int main() {
-    double *h_A = (double*)malloc(N * N * sizeof(double));
-    double *h_B = (double*)malloc(N * N * sizeof(double));
-    double *h_C = (double*)malloc(N * N * sizeof(double));
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <N>\n", argv[0]);
+        return 1;
+    }
+    int n = atoi(argv[1]);
+    if (n <= 0) return 1;
+
+    double *h_A = (double*)malloc(n * n * sizeof(double));
+    double *h_B = (double*)malloc(n * n * sizeof(double));
+    double *h_C = (double*)malloc(n * n * sizeof(double));
 
     srand(time(NULL));
 
-    initLinearMatrix(h_A, h_C, h_B, N, 3, 4);
+    initLinearMatrix(h_A, h_C, h_B, n, 3, 4);
 
     double *d_A, *d_B, *d_C;
-    cudaMalloc(&d_A, N * N * sizeof(double));
-    cudaMalloc(&d_B, N * N * sizeof(double));
-    cudaMalloc(&d_C, N * N * sizeof(double));
-    checkCuda(cudaMalloc(&d_A, N * N * sizeof(double)), "Malloc A");
-    checkCuda(cudaMalloc(&d_B, N * N * sizeof(double)), "Malloc B");
-    checkCuda(cudaMalloc(&d_C, N * N * sizeof(double)), "Malloc C");
+    checkCuda(cudaMalloc(&d_A, n * n * sizeof(double)), "Malloc A");
+    checkCuda(cudaMalloc(&d_B, n * n * sizeof(double)), "Malloc B");
+    checkCuda(cudaMalloc(&d_C, n * n * sizeof(double)), "Malloc C");
 
-    cudaMemcpy(d_A, h_A, N * N * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, h_B, N * N * sizeof(double), cudaMemcpyHostToDevice);
-    checkCuda(cudaMemcpy(d_A, h_A, N * N * sizeof(double), cudaMemcpyHostToDevice), "Copy H2D A");
-    checkCuda(cudaMemcpy(d_B, h_B, N * N * sizeof(double), cudaMemcpyHostToDevice), "Copy H2D B");
+    checkCuda(cudaMemcpy(d_A, h_A, n * n * sizeof(double), cudaMemcpyHostToDevice), "Copy H2D A");
+    checkCuda(cudaMemcpy(d_B, h_B, n * n * sizeof(double), cudaMemcpyHostToDevice), "Copy H2D B");
 
     dim3 blockDim(16, 16);
-    dim3 gridDim((N + 15) / 16, (N + 15) / 16);
-    dim3 gridDim((N + TILE_SIZE - 1) / TILE_SIZE, (N + TILE_SIZE - 1) / TILE_SIZE);
+    dim3 gridDim((n + TILE_SIZE - 1) / TILE_SIZE, (n + TILE_SIZE - 1) / TILE_SIZE);
 
     double startT = (double)clock() / CLOCKS_PER_SEC;
-    matrixMulTiled<<<gridDim, blockDim>>>(d_A, d_B, d_C, N);
+    matrixMulTiled<<<gridDim, blockDim>>>(d_A, d_B, d_C, n);
     cudaDeviceSynchronize();
     double endT = (double)clock() / CLOCKS_PER_SEC;
 
-    cudaMemcpy(h_C, d_C, N * N * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_C, d_C, n * n * sizeof(double), cudaMemcpyDeviceToHost);
 
     printf("Exec Time: %f\n", (endT - startT));
     printf("First item of C %f\n", h_C[0]);

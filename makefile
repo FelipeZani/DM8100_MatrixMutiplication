@@ -12,6 +12,6 @@ runall : serial omp mpi cuda
 	./serialMux
 	./openMPMux
 	mpirun -n 1 ./mpiMux
-	./cudaMux
+	./cudaMux 
 clean:
 	rm ${PROG}

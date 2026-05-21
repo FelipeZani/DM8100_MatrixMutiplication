@@ -18,3 +18,10 @@
 *.log
 *.db
 *.txt
+
+
+# Folder-specific #
+###################
+analysis/tmp/
+local/
+ucloud/
