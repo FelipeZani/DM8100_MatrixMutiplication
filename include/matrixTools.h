@@ -16,6 +16,7 @@ void initMatrix(double * matrixA, double * matrixB, double * matrixC, int N, int
 void initLinearMatrix(double * a, double * c, double * b, int N, int inta , int intb);
 double check_norm(double * C_serial, double * C_parallel, int N);
 
+void initMat(double *matrixA, double *matrixB, double *matrixC, int N); 
 #ifdef __cplusplus
 }
 #endif

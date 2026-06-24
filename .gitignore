@@ -25,3 +25,8 @@
 analysis/tmp/
 local/
 ucloud/
+
+mpiMux
+serialMux
+toto
+mpiMux
