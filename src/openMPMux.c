@@ -1,4 +1,4 @@
-#include "include/matrixTools.h"
+#include "../include/matrixTools.h"
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,35 +27,32 @@ void matrixMuxIKJ_OMP(double *matrixA, double *matrixB, double *matrixC,
   }
 }
 
-void parallelTBMUX(const int N, double *A, double *B, double *C) {
-  const int BS = 64;
-#pragma omp parallel for collapse(2) schedule(static)
-  for (int i0 = 0; i0 < N; i0 += BS) {
-    for (int j0 = 0; j0 < N; j0 += BS) {
+void matrixMuxTilingBlockIKJ(const int N, double *A, double *B, double *C) {
 
-      int i_max = (i0 + BS < N) ? i0 + BS : N;
-      int j_max = (j0 + BS < N) ? j0 + BS : N;
+  const int block_size = 64; // 64 = common cache line size
+#pragma omp parallel for schedule(dynamic)
+  for (int i0 = 0; i0 < N; i0 += block_size) {
+    int imin = i0 + block_size > N ? N : i0 + block_size;
+    for (int j0 = 0; j0 < N; j0 += block_size) {
+      int jmin = j0 + block_size > N ? N : j0 + block_size;
 
-      for (int k0 = 0; k0 < N; k0 += BS) {
-        int k_max = (k0 + BS < N) ? k0 + BS : N;
+      for (int k0 = 0; k0 < N; k0 += block_size) {
+        int kmin = k0 + block_size > N ? N : k0 + block_size;
 
-        for (int i = i0; i < i_max; i++) {
+        for (int i = i0; i < imin; i++) {
 
-          for (int j = j0; j < j_max; j++) {
+          for (int k = k0; k < kmin; k++) {
+            for (int j = j0; j < jmin; j++) {
 
-            double sum = C[i * N + j];
-
-            for (int k = k0; k < k_max; k++) {
-              sum += A[i * N + k] * B[k * N + j];
+              C[i * N + j] = C[i * N + j] + A[i * N + k] * B[k * N + j];
             }
-
-            C[i * N + j] = sum;
           }
         }
       }
     }
   }
 }
+
 void matrixMuxTilingBlock(const int N, double *A, double *B, double *C) {
 
   const int block_size = 64;
@@ -83,6 +80,61 @@ void matrixMuxTilingBlock(const int N, double *A, double *B, double *C) {
     }
   }
 }
+
+void multiply_packed_block(const double *restrict a_packed,
+                           const double *restrict b_packed, double *restrict C,
+                           const int n, const int block_size) {
+  a_packed = __builtin_assume_aligned(a_packed, 32);
+  b_packed = __builtin_assume_aligned(b_packed, 32);
+  C = __builtin_assume_aligned(C, 32);
+
+  for (int c = 0; c < block_size; ++c) {
+    for (int k = 0; k < block_size; ++k) {
+      const double b_val = b_packed[c * block_size + k];
+      for (int r = 0; r < block_size; ++r) {
+        C[r + c * n] += a_packed[r + k * block_size] * b_val;
+      }
+    }
+  }
+}
+
+void pack_matrix(double *restrict dest, const double *restrict src, const int n,
+                 const int block_size) {
+  for (int j = 0; j < block_size; j++) {
+    for (int i = 0; i < block_size; i++) {
+      dest[j * block_size + i] = src[i + j * n];
+    }
+  }
+}
+
+void tiled_packed_extracted_dgemm(const int n, const int block_size,
+                                  const double *restrict A,
+                                  const double *restrict B,
+                                  double *restrict C) {
+  A = __builtin_assume_aligned(A, 32);
+  B = __builtin_assume_aligned(B, 32);
+  C = __builtin_assume_aligned(C, 32);
+
+  double *a_packed =
+      (double *)aligned_alloc(32, block_size * block_size * sizeof(double));
+  double *b_packed =
+      (double *)aligned_alloc(32, block_size * block_size * sizeof(double));
+#pragma for omp parallel
+  for (int br = 0; br < n; br += block_size) {
+    for (int bc = 0; bc < n; bc += block_size) {
+      for (int bk = 0; bk < n; bk += block_size) {
+        pack_matrix(a_packed, &A[br + bk * n], n, block_size);
+        pack_matrix(b_packed, &B[bk + bc * n], n, block_size);
+        multiply_packed_block(a_packed, b_packed, &C[br + bc * n], n,
+                              block_size);
+      }
+    }
+  }
+
+  free(a_packed);
+  free(b_packed);
+}
+
 int main(int argc, char *argv[]) {
 
   if (argc != 2) {
@@ -90,24 +142,27 @@ int main(int argc, char *argv[]) {
   }
 
   int N = atoi(argv[1]);
+  omp_set_num_threads(12);
 
   double *matrixA = malloc(N * N * sizeof(double));
   double *matrixB = malloc(N * N * sizeof(double));
-  double *matrixC_OMP = malloc(N * N * sizeof(double));
-  double *matrixC_Serial = malloc(N * N * sizeof(double));
+  double *matrixC = calloc(N * N, sizeof(double));
+  double *matrixSerialStard = calloc(N * N, sizeof(double));
 
   srand(time(NULL));
 
-  initMatrix(matrixA, matrixB, matrixC_OMP, N, 2, 3);
-  initMatrix(matrixA, matrixB, matrixC_Serial, N, 2, 3);
+  initDeterministicLinearMatrix(matrixA, matrixB, N);
+
   double startT = omp_get_wtime();
-  matrixMuxIKJ_OMP(matrixA, matrixB, matrixC_OMP, N);
-  matrixMuxTilingBlock(N, matrixA, matrixB, matrixC_OMP);
+  // matrixMuxTilingBlockIKJ(N, matrixA, matrixB, matrixC);
+  // matrixMuxIKJ_OMP(matrixA, matrixB, matrixC, N);
+  // matrixMuxTilingBlock(N, matrixA, matrixB, matrixC);
+
   double endT = omp_get_wtime();
 
-  matrixMux_Serial(matrixA, matrixB, matrixC_Serial, N);
+  matrixMux_Serial(matrixA, matrixB, matrixSerialStard, N);
 
-  double diff = check_norm(matrixC_Serial, matrixC_OMP, N);
+  double diff = check_norm(matrixSerialStard, matrixC, N);
 
   printf("OpenMP (IKJ) | Size: %dx%d | Exec Time: %f s\n", N, N,
          (endT - startT));
@@ -119,7 +174,7 @@ int main(int argc, char *argv[]) {
 
   free(matrixA);
   free(matrixB);
-  free(matrixC_OMP);
-  free(matrixC_Serial);
+  free(matrixC);
+  free(matrixSerialStard);
   return 0;
 }

@@ -1,7 +1,7 @@
 serial:
-	gcc -fopenmp -O3 -ffast-math -mavx2 -o serialMux serialMux.c src/matrixTools.c
+	gcc -fopenmp -O3 -ffast-math -mavx2 -o serialMux src/serialMux.c src/matrixTools.c
 omp:
-	gcc -fopenmp -O3 -ffast-math -mavx2 -o openMPMux openMPMux.c src/matrixTools.c 
+	gcc -fopenmp -O3 -ffast-math -mavx2 -o openMPMux src/openMPMux.c src/matrixTools.c 
 
 mpi:
 	mpicc -o mpiMux mpiMux.c src/matrixTools.c

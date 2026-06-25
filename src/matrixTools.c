@@ -22,21 +22,10 @@ void initLinearMatrix(double *a, double *c, double *b, int N, int inta,
   }
 }
 
-void initMatrix(double *matrixA, double *matrixB, double *matrixC, int N, int a,
-                int b) {
-  for (int i = 0; i < N; i++) {
-    for (int j = 0; j < N; j++) {
-      matrixA[i * N + j] = 2.0 + N;
-      matrixB[i * N + j] = 3.0 + N;
-      matrixC[i * N + j] = 0.0;
-    }
-  }
-}
-void initMat(double *matrixA, double *matrixB, double *matrixC, int N) {
+void initDeterministicLinearMatrix(double *matrixA, double *matrixB, int N) {
   for (int i = 0; i < N; i++) {
     matrixA[i] = 2.0 * i + N;
     matrixB[i] = 3.0 * i + N;
-    matrixC[i] = 0.0;
   }
 }
 double check_norm(double *C_serial, double *C_parallel, int N) {

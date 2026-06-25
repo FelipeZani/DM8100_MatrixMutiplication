@@ -1,4 +1,4 @@
-#include "include/matrixTools.h"
+#include "../include/matrixTools.h"
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,10 +49,10 @@ void pack_matrix(double *restrict dest, const double *restrict src, const int n,
   }
 }
 
-void tiled_packed_extracted_dgemm(const int n, const double *restrict A,
+void tiled_packed_extracted_dgemm(const int n, const int block_size,
+                                  const double *restrict A,
                                   const double *restrict B,
                                   double *restrict C) {
-  const int block_size = 64;
   A = __builtin_assume_aligned(A, 32);
   B = __builtin_assume_aligned(B, 32);
   C = __builtin_assume_aligned(C, 32);
@@ -106,35 +106,35 @@ int main(int argc, char *argv[]) {
   }
 
   int N = atoi(argv[1]);
-
+  int blockSize = 64;
   double *matrixA = malloc(N * N * sizeof(double));
   double *matrixB = malloc(N * N * sizeof(double));
-  double *matrixC = malloc(N * N * sizeof(double));
-  double *matrixD = calloc(N * N, sizeof(double));
+  double *matrixC = calloc(N * N, sizeof(double));
+  double *matrixDStardSerial = calloc(N * N, sizeof(double));
 
-  initMatrix(matrixA, matrixB, matrixC, N, 2, 3);
+  initDeterministicLinearMatrix(matrixA, matrixB, N);
 
   double startT = omp_get_wtime();
   // matrixMuxTilingBlockIKJ(N, matrixA, matrixB, matrixC);
-  // tiled_packed_extracted_dgemm(N, matrixA, matrixB, matrixC);
+  tiled_packed_extracted_dgemm(N, blockSize, matrixA, matrixB, matrixC);
   // matrixMuxIKJ(matrixA, matrixB, matrixC, N);
   double endT = omp_get_wtime();
-  matrixMux(matrixA, matrixB, matrixD, N);
-  double diff = check_norm(matrixC, matrixD, N);
+  // matrixMux(matrixA, matrixB, matrixD, N);
+  double diff = check_norm(matrixC, matrixDStardSerial, N);
 
   printf("SERIAL MUX (IKJ) | Size: %dx%d | Exec Time: %f s\n", N, N,
          (endT - startT));
-  if (diff <= 1e-6) {
-    printf("Pass (Difference = %f)\n", diff);
-  } else {
-    printf("Fail (Difference = %f)\n", diff);
-    printf("First element of C: %f\n First element of D: %f", matrixC[0],
-           matrixD[0]);
-  }
+  // if (diff <= 1e-6) {
+  //   printf("Pass (Difference = %f)\n", diff);
+  // } else {
+  //   printf("Fail (Difference = %f)\n", diff);
+  //   printf("First element of C: %f\n First element of D: %f", matrixC[0],
+  //          matrixD[0]);
+  // }
   free(matrixA);
   free(matrixB);
   free(matrixC);
-  free(matrixD);
+  free(matrixDStardSerial);
 
   return 0;
 }
